@@ -1,14 +1,15 @@
 import pandas as pd
 import numpy as np
 
-word_to_search = "bottles"
+words_to_search = "bottles empty"
+words_to_search = words_to_search.lower().split()
 
-def term_frequency(word, document):
-    return document.count(word) / len(document)
+def term_frequency(words, document):
+    return sum([document.count(word) for word in words]) / len(document)
 
-def inverse_document_frequency(word, corpus):
+def inverse_document_frequency(words, corpus):
     count_of_documents = len(corpus) + 1
-    count_of_documents_contain_word = sum([1 for doc in corpus if word in doc]) + 1
+    count_of_documents_contain_word = sum([1 for doc in corpus if all(word in doc.lower() for word in words)]) + 1
     idf = np.log10(count_of_documents/count_of_documents_contain_word) + 1
     return idf
 
@@ -19,8 +20,8 @@ print(df.head(2))
 df_tf_idf = []
 
 for document in df['Top Comment']:
-    tf = term_frequency(word_to_search, document.split())
-    idf = inverse_document_frequency(word_to_search, df['Top Comment'])
+    tf = term_frequency(words_to_search, document.lower().split())
+    idf = inverse_document_frequency(words_to_search, df['Top Comment'])
     new_row = {
         "tf": tf,
         "idf": idf,
