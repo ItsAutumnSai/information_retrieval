@@ -74,12 +74,12 @@ def calculate_vsm_scores(query, documents):
 
 st.set_page_config(
     page_title="Mini Search Engine",
-    page_icon="🔍",
+    page_icon="💻",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-st.title("🔍 Mini Search Engine")
+st.title("Mini Search Engine")
 st.markdown("---")
 
 # Sidebar for settings
