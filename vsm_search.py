@@ -1,52 +1,59 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
+from tokenization import tokenize
 
-words_to_search = "bottles empty"
-words_to_search = words_to_search.lower().split()
+def _term_frequency(word, doc_tokens):
+    raw_tf = doc_tokens.count(word)
+    return 1 + np.log10(raw_tf) if raw_tf > 0 else 0.0
 
-# using log raw frequency weighting
-def term_frequency(word, document):
-    raw_tf = document.count(word)
-    return 1+np.log10(raw_tf) if raw_tf > 0 else 0
+def _inverse_document_frequency(word, all_doc_tokens):
+    N = len(all_doc_tokens)
+    df = sum(1 for doc in all_doc_tokens if word in doc)
+    if df == 0:
+        return 0.0
+    return np.log10(N / df) + 1.0
 
-def inverse_document_frequency(word, corpus):
-    count_of_documents = len(corpus) + 1
-    count_of_documents_contain_word = sum([1 for doc in corpus if word in doc]) + 1
-    idf = np.log10(count_of_documents/count_of_documents_contain_word) + 1
-    return idf
+def _cosine_similarity(vec1, vec2):
+    dot = np.dot(vec1, vec2)
+    norm1 = np.linalg.norm(vec1)
+    norm2 = np.linalg.norm(vec2)
+    if norm1 == 0.0 or norm2 == 0.0:
+        return 0.0
+    return float(dot / (norm1 * norm2))
 
-df = pd.read_csv('youtube_scraped_comments.csv')
-df = df.iloc[:, [2]]
-print(df.head(2))
+def search(query, documents, tokenized_docs=None):
+    query_tokens = tokenize(query)
+    if not query_tokens:
+        return pd.DataFrame(columns=['index', 'document', 'score']), {}, []
 
-df_tf_idf = []
-vsm_sum = []
-for document in df['Top Comment']:
-    new_row = {}
-    vsm_each = {}
-    for i in range(len(words_to_search)):
-        tf = term_frequency(words_to_search[i], document.lower().split())
-        idf = inverse_document_frequency(words_to_search[i], df['Top Comment'])
-        add_row = {
-            "tf"+str(i): tf,
-            "idf"+str(i): idf,
-            "tf-idf"+str(i): tf*idf
-        }
-        add_vsm = {
-            "vsm"+str(i): idf*(tf*idf)  
-        }
-        #add columns
-        new_row.update(add_row)
-        vsm_each.update(add_vsm)
-    #add rows
-    df_tf_idf.append(new_row)
-    vsm_sum.append(vsm_each)
-    
-df_tf_idf = pd.DataFrame(df_tf_idf)
-vsm_sum = pd.DataFrame(vsm_sum)
-vsm_sum = vsm_sum.sum(axis=1).rename("VSM")
-df = pd.concat([df, df_tf_idf], axis=1)
-df = pd.concat([df, vsm_sum], axis=1)
-pd.set_option('display.max_colwidth', None)
-df = df.sort_values(by="VSM", ascending=False)
-df.head(10)
+    if tokenized_docs is None:
+        tokenized_docs = [tokenize(doc) for doc in documents]
+
+    query_terms = list(dict.fromkeys(query_tokens))  # unique, order-preserved
+
+    idf = {
+        term: _inverse_document_frequency(term, tokenized_docs)
+        for term in query_terms
+    }
+
+    query_vector = np.array([
+        _term_frequency(term, query_tokens) * idf[term]
+        for term in query_terms
+    ])
+
+    rows = []
+    for idx, (doc, doc_tokens) in enumerate(zip(documents, tokenized_docs)):
+        doc_vector = np.array([
+            _term_frequency(term, doc_tokens) * idf[term]
+            for term in query_terms
+        ])
+        score = _cosine_similarity(query_vector, doc_vector)
+        row = {'index': idx, 'document': doc}
+        for term in query_terms:
+            row[f'TF({term})'] = round(_term_frequency(term, doc_tokens), 4)
+        row['score'] = score
+        rows.append(row)
+
+    result_df = pd.DataFrame(rows)
+    result_df = result_df.sort_values(by='score', ascending=False).reset_index(drop=True)
+    return result_df, idf, query_terms
