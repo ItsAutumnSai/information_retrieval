@@ -35,11 +35,6 @@ def tokenize(text, stop_words=None):
     return tokens
 
 def build_word_stats(documents):
-    """Build per-lemma frequency stats across a list of document strings.
-
-    Words sharing the same lemma have their counts merged, so 'bottle' and
-    'bottles' both contribute to the 'bottle' entry.
-    """
     word_stats = defaultdict(lambda: {'frequency': 0, 'indices': set()})
     for idx, doc in enumerate(documents):
         doc_token_counts = defaultdict(int)
