@@ -164,7 +164,7 @@ if st.session_state.classic_result_df is not None:
     if relevant_docs:
         st.markdown("---")
         st.markdown("##### NDCG comparison")
-        k = st.selectbox("k", [5, 10, 20, len(documents)], index=1, format_func=lambda x: f"NDCG@{x}")
+        k = st.selectbox("", [5, 10, 20, len(documents)], index=1, format_func=lambda x: f"NDCG@{x}")
 
         classic_ranked = (st.session_state.classic_result_df['index'] + 1).tolist()
         semantic_ranked = (st.session_state.semantic_result_df['index'] + 1).tolist()
