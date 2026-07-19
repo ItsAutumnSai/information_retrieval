@@ -4,8 +4,8 @@ import numpy as np
 # Values are the sets of #Document numbers (1-indexed, matching the
 # "#Document" column shown in the UI) considered relevant to that query.
 QRELS = {
-    "good ecosystem": {45},
-    "recycle bottle": {6, 9, 2, 13, 11},
+    "good ecosystem": {45, 3, 5, 6, 8, 9, 10, 11, 13, 15, 16, 22, 23},
+    "recycle bottle": {2, 4, 5, 6, 7, 8, 9, 10, 11, 13},
 }
 
 
